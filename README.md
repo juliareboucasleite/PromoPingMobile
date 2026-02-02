@@ -1,2 +1,4 @@
-# PromoPingMobile
+# PromoPing Mobile
+
+Aplicação Android em Kotlin com Jetpack Compose que replica a experiência do PromoPing: autenticação de usuários, dashboard com estatísticas, lista de produtos com filtros, gestão de perfil, planos e ações de exportação, desativação e exclusão de conta. Usa Retrofit com Moshi e OkHttp para consumo da API, DataStore para persistir token, Coil para imagens e Navigation Compose para a navegação. Para compilar ou executar, abra o projeto no Android Studio (ou IntelliJ IDEA Ultimate com plugin Android), deixe o Gradle sincronizar, selecione um dispositivo físico ou emulador e rode a variante debug com o comando gradlew assembleDebug ou pelo botão Run. O arquivo local.properties deve apontar para o SDK do Android; os endpoints são configurados via BuildConfig.API_BASE_URL definidos no build.gradle.kts. Após o build, o APK fica disponível em app/build/outputs/apk/debug/ e pode ser instalado diretamente no dispositivo ou executado via Run no IDE. 
 
