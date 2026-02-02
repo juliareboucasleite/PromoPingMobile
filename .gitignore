@@ -1,0 +1,32 @@
+# Gradle
+.gradle/
+.kotlin/
+/local.properties
+/gradle-8.13/
+/build/
+**/build/
+
+# IDE
+.idea/
+*.iml
+
+# Android/Artifactory outputs
+*.apk
+*.aab
+*.ap_
+*.dex
+*.class
+
+# Native/NDK
+.cxx/
+.externalNativeBuild/
+
+# Logs and caches
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Misc
+captures/
