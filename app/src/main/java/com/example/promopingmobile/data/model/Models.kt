@@ -142,7 +142,10 @@ data class Plan(
     val limiteProdutos: Int,
     val intervaloVerificacaoHoras: Int,
     val exportaRelatorios: Boolean,
-    val observacoes: String = ""
+    val observacoes: String = "",
+    @Json(name = "Link") val link: String? = null,
+    @Json(name = "LinkMensal") val linkMensal: String? = null,
+    @Json(name = "LinkAnual") val linkAnual: String? = null
 )
 
 @JsonClass(generateAdapter = true)
