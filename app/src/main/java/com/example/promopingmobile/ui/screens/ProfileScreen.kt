@@ -29,6 +29,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
 import androidx.compose.foundation.text.KeyboardOptions
@@ -42,6 +43,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.ui.graphics.Color
+import kotlinx.coroutines.launch
 
 @Composable
 fun ProfileScreen(viewModel: PromoViewModel) {
@@ -59,13 +61,15 @@ fun ProfileScreen(viewModel: PromoViewModel) {
     val notifEmail = remember { mutableStateOf(profile?.notificacoesEmail ?: true) }
     val notifDiscord = remember { mutableStateOf(profile?.notificacoesDiscord ?: false) }
 
+    val coroutineScope = rememberCoroutineScope()
     val qrLauncher = rememberLauncherForActivityResult(contract = ScanContract()) { result ->
         val contents = result?.contents
-        if (contents.isNullOrBlank()) {
-            snackbar.showSnackbar("QRCode inválido ou cancelado")
-        } else {
-            viewModel.loginWithToken(contents)
-            snackbar.showSnackbar("Sessão iniciada via QR")
+        coroutineScope.launch {
+            if (contents.isNullOrBlank()) {
+                snackbar.showSnackbar("QRCode inválido ou cancelado")
+            } else {
+                viewModel.confirmQrLogin(contents)
+            }
         }
     }
 
@@ -125,11 +129,12 @@ fun ProfileScreen(viewModel: PromoViewModel) {
                         },
                         modifier = Modifier.fillMaxWidth(),
                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                        shape = RoundedCornerShape(10.dp)
+                        shape = RoundedCornerShape(10.dp),
+                        enabled = !state.qrLoading
                     ) {
                         Icon(Icons.Default.QrCodeScanner, contentDescription = null)
                         Spacer(Modifier.padding(horizontal = 4.dp))
-                        Text("Ler QR e entrar")
+                        Text(if (state.qrLoading) "A processar..." else "Ler QR e entrar")
                     }
                 }
             }

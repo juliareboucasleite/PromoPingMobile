@@ -11,6 +11,7 @@ import com.example.promopingmobile.data.model.UpdateProductRequest
 import com.example.promopingmobile.data.model.UpdateProfileRequest
 import com.example.promopingmobile.data.model.UserProfile
 import com.example.promopingmobile.data.model.UserStats
+import com.example.promopingmobile.data.model.QrConfirmRequest
 import okhttp3.ResponseBody
 import retrofit2.Response
 import retrofit2.http.Body
@@ -27,6 +28,9 @@ interface PromoPingApi {
 
     @POST("/api/auth/register")
     suspend fun register(@Body body: RegisterRequest): Response<AuthResponse>
+
+    @POST("/api/auth/qr-confirm")
+    suspend fun confirmQr(@Body body: QrConfirmRequest): Response<ApiMessageResponse>
 
     @GET("/api/user/profile")
     suspend fun getProfile(): Response<UserProfile>

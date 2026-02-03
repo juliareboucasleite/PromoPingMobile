@@ -52,7 +52,8 @@ data class ProfileUiState(
     val profile: UserProfile? = null,
     val loading: Boolean = false,
     val message: String? = null,
-    val error: String? = null
+    val error: String? = null,
+    val qrLoading: Boolean = false
 )
 
 data class PlansUiState(
@@ -125,6 +126,35 @@ class PromoViewModel(private val repository: PromoRepository) : ViewModel() {
             repository.saveToken(token)
             _authState.update { it.copy(token = token, isAuthenticated = true) }
             loadInitialData(force = true)
+        }
+    }
+
+    fun confirmQrLogin(code: String) {
+        val currentToken = _authState.value.token
+        if (currentToken.isNullOrBlank()) {
+            _profileState.update { it.copy(error = "Inicia sessão na app primeiro", message = null) }
+            return
+        }
+
+        _profileState.update { it.copy(qrLoading = true, message = null, error = null) }
+        viewModelScope.launch {
+            when (val result = repository.confirmQr(code.trim())) {
+                is ApiResult.Success -> {
+                    val msg = result.data.message ?: "Sessão iniciada no browser"
+                    _profileState.update { it.copy(qrLoading = false, message = msg, error = null) }
+                }
+                is ApiResult.Error -> {
+                    when (result.statusCode) {
+                        400, 409 -> _profileState.update { it.copy(qrLoading = false, error = result.message) }
+                        401, 403 -> {
+                            logout()
+                            _profileState.update { it.copy(qrLoading = false, error = "Sessão expirada. Inicia sessão novamente na app e tenta outra vez.") }
+                        }
+                        else -> _profileState.update { it.copy(qrLoading = false, error = result.message.ifBlank { "Erro no servidor. Tenta mais tarde." }) }
+                    }
+                }
+                ApiResult.Loading -> _profileState.update { it.copy(qrLoading = true) }
+            }
         }
     }
 

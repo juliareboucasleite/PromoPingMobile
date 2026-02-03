@@ -92,6 +92,7 @@ dependencies {
     implementation("com.squareup.moshi:moshi-kotlin:1.15.1")
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
     implementation("io.coil-kt:coil-compose:2.7.0")
+    implementation("io.coil-kt:coil-svg:2.7.0")
     implementation("androidx.browser:browser:1.7.0")
     implementation("com.journeyapps:zxing-android-embedded:4.3.0")
 

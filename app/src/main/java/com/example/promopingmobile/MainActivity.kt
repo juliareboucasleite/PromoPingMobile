@@ -14,7 +14,6 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -39,8 +38,6 @@ class MainActivity : ComponentActivity() {
             val container = remember { AppContainer(applicationContext) }
             val viewModel: PromoViewModel = viewModel(factory = PromoViewModelFactory(container.repository))
             val navController = rememberNavController()
-            val authState by viewModel.authState.collectAsState()
-            val startDestination = if (authState.isAuthenticated) Destinations.MAIN_GRAPH else Destinations.AUTH_GRAPH
             val currentBackStack by navController.currentBackStackEntryAsState()
             val currentDestination = currentBackStack?.destination
             val showBottomBar = currentDestination.inMainGraph()
@@ -56,7 +53,6 @@ class MainActivity : ComponentActivity() {
                     PromoNavGraph(
                         viewModel = viewModel,
                         navController = navController,
-                        startDestination = startDestination,
                         modifier = Modifier.padding(innerPadding)
                     )
                 }
@@ -80,8 +76,9 @@ private fun PromoBottomBar(navController: NavHostController) {
     val items = listOf(
         BottomNavItem("Dashboard", Destinations.DASHBOARD, Icons.Default.Dashboard),
         BottomNavItem("Produtos", Destinations.PRODUCTS, Icons.Default.ShoppingCart),
-        BottomNavItem("Perfil", Destinations.PROFILE, Icons.Default.Person),
-        BottomNavItem("Planos", Destinations.PLANS, Icons.Default.PriceChange)
+        BottomNavItem("Planos", Destinations.PLANS, Icons.Default.PriceChange),
+        BottomNavItem("Perfil", Destinations.PROFILE, Icons.Default.Person)
+        
     )
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route

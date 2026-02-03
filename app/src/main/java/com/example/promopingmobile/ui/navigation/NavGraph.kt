@@ -15,9 +15,13 @@ import com.example.promopingmobile.ui.screens.PlansScreen
 import com.example.promopingmobile.ui.screens.ProductsScreen
 import com.example.promopingmobile.ui.screens.ProfileScreen
 import com.example.promopingmobile.ui.screens.RegisterScreen
+import com.example.promopingmobile.ui.screens.SplashScreen
+import com.example.promopingmobile.ui.screens.WelcomeScreen
 import com.example.promopingmobile.ui.state.PromoViewModel
 
 object Destinations {
+    const val SPLASH = "splash"
+    const val WELCOME = "welcome"
     const val AUTH_GRAPH = "auth_graph"
     const val MAIN_GRAPH = "main_graph"
     const val LOGIN = "login"
@@ -32,27 +36,61 @@ object Destinations {
 fun PromoNavGraph(
     viewModel: PromoViewModel,
     navController: NavHostController = rememberNavController(),
-    startDestination: String,
     modifier: Modifier = Modifier
 ) {
-    LaunchedEffect(viewModel.authState.collectAsState().value.isAuthenticated) {
-        val authenticated = viewModel.authState.value.isAuthenticated
-        if (authenticated) {
+    val authState = viewModel.authState.collectAsState()
+
+    LaunchedEffect(authState.value.isAuthenticated) {
+        if (authState.value.isAuthenticated) {
             navController.navigate(Destinations.MAIN_GRAPH) {
                 popUpTo(0) { inclusive = true }
             }
         } else {
-            navController.navigate(Destinations.AUTH_GRAPH) {
-                popUpTo(0) { inclusive = true }
+            val currentRoute = navController.currentDestination?.route
+            val inMain = currentRoute in listOf(
+                Destinations.MAIN_GRAPH,
+                Destinations.DASHBOARD,
+                Destinations.PRODUCTS,
+                Destinations.PROFILE,
+                Destinations.PLANS
+            )
+            if (inMain) {
+                navController.navigate(Destinations.WELCOME) {
+                    popUpTo(0) { inclusive = true }
+                }
             }
         }
     }
 
     NavHost(
         navController = navController,
-        startDestination = startDestination,
+        startDestination = Destinations.SPLASH,
         modifier = modifier
     ) {
+        composable(Destinations.SPLASH) {
+            SplashScreen(
+                onFinished = {
+                    if (authState.value.isAuthenticated) {
+                        navController.navigate(Destinations.MAIN_GRAPH) {
+                            popUpTo(0) { inclusive = true }
+                        }
+                    } else {
+                        navController.navigate(Destinations.WELCOME) {
+                            popUpTo(0) { inclusive = true }
+                        }
+                    }
+                }
+            )
+        }
+        composable(Destinations.WELCOME) {
+            WelcomeScreen(
+                onContinue = {
+                    navController.navigate(Destinations.AUTH_GRAPH) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                }
+            )
+        }
         navigation(startDestination = Destinations.LOGIN, route = Destinations.AUTH_GRAPH) {
             composable(Destinations.LOGIN) {
                 LoginScreen(

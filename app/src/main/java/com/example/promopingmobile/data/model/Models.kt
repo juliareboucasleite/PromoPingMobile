@@ -39,6 +39,11 @@ data class ApiMessageResponse(
 )
 
 @JsonClass(generateAdapter = true)
+data class QrConfirmRequest(
+    val code: String
+)
+
+@JsonClass(generateAdapter = true)
 data class UserProfile(
     val id: String? = null,
     val nome: String = "",
@@ -117,7 +122,7 @@ data class UpdatePasswordRequest(
 
 sealed class ApiResult<out T> {
     data class Success<T>(val data: T) : ApiResult<T>()
-    data class Error(val message: String) : ApiResult<Nothing>()
+    data class Error(val message: String, val statusCode: Int? = null) : ApiResult<Nothing>()
     object Loading : ApiResult<Nothing>()
 }
 

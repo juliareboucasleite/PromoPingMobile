@@ -10,6 +10,7 @@ import com.example.promopingmobile.data.model.AuthResponse
 import com.example.promopingmobile.data.model.CreateProductRequest
 import com.example.promopingmobile.data.model.Plan
 import com.example.promopingmobile.data.model.Product
+import com.example.promopingmobile.data.model.QrConfirmRequest
 import com.example.promopingmobile.data.model.RegisterRequest
 import com.example.promopingmobile.data.model.UpdatePasswordRequest
 import com.example.promopingmobile.data.model.UpdateProductRequest
@@ -43,6 +44,10 @@ class PromoRepository(
 
     suspend fun register(nome: String, email: String, password: String, dataNascimento: String): ApiResult<AuthResponse> =
         safeCall { api.register(RegisterRequest(nome.trim(), email.trim(), password, dataNascimento.trim())) }
+
+    suspend fun confirmQr(code: String): ApiResult<ApiMessageResponse> = safeCall {
+        api.confirmQr(QrConfirmRequest(code = code))
+    }
 
     suspend fun fetchProfile(): ApiResult<UserProfile> = safeCall { api.getProfile() }
 
@@ -116,10 +121,10 @@ class PromoRepository(
                 if (body != null) {
                     ApiResult.Success(body)
                 } else {
-                    ApiResult.Error("Resposta vazia do servidor")
+                    ApiResult.Error("Resposta vazia do servidor", response.code())
                 }
             } else {
-                ApiResult.Error(parseError(response))
+                ApiResult.Error(parseError(response), response.code())
             }
         } catch (e: Exception) {
             ApiResult.Error(e.message ?: "Falha de rede")
@@ -133,12 +138,12 @@ class PromoRepository(
         return try {
             val response = call()
             if (response.isSuccessful) {
-                val body = response.body() ?: return ApiResult.Error("Resposta vazia do servidor")
+                val body = response.body() ?: return ApiResult.Error("Resposta vazia do servidor", response.code())
                 val target = File(context.cacheDir, fileName)
                 writeBodyToFile(body, target)
                 ApiResult.Success(target)
             } else {
-                ApiResult.Error(parseError(response))
+                ApiResult.Error(parseError(response), response.code())
             }
         } catch (ex: Exception) {
             ApiResult.Error(ex.message ?: "Falha ao exportar")
