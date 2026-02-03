@@ -45,7 +45,7 @@ class MainActivity : ComponentActivity() {
             val currentDestination = currentBackStack?.destination
             val showBottomBar = currentDestination.inMainGraph()
 
-            PromoPingMobileTheme {
+            PromoPingMobileTheme(darkTheme = false) {
                 Scaffold(
                     bottomBar = {
                         if (showBottomBar) {
