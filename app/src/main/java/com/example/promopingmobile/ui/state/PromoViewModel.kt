@@ -106,10 +106,10 @@ class PromoViewModel(private val repository: PromoRepository) : ViewModel() {
         }
     }
 
-    fun register(nome: String, email: String, password: String) {
+    fun register(nome: String, email: String, password: String, dataNascimento: String) {
         _authState.update { it.copy(loading = true, error = null) }
         viewModelScope.launch {
-            when (val result = repository.register(nome, email, password)) {
+            when (val result = repository.register(nome, email, password, dataNascimento)) {
                 is ApiResult.Success -> {
                     result.data.token?.let { repository.saveToken(it) }
                     _authState.update { it.copy(loading = false, user = result.data.user, error = null) }
