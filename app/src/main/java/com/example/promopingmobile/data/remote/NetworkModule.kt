@@ -9,16 +9,29 @@ import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.runBlocking
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
+import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
 import java.util.concurrent.TimeUnit
 
 class NetworkModule(context: Context, private val sessionManager: SessionManager) {
+    private val networkConfig = NetworkConfig(context)
 
     private val moshi: Moshi = Moshi.Builder()
         .add(KotlinJsonAdapterFactory())
         .build()
+
+    private val baseUrlInterceptor = Interceptor { chain ->
+        val request = chain.request()
+        val baseUrl = networkConfig.currentBaseUrl().toHttpUrl()
+        val newUrl = request.url.newBuilder()
+            .scheme(baseUrl.scheme)
+            .host(baseUrl.host)
+            .port(baseUrl.port)
+            .build()
+        chain.proceed(request.newBuilder().url(newUrl).build())
+    }
 
     private val authInterceptor = Interceptor { chain ->
         val requestBuilder = chain.request().newBuilder()
@@ -34,6 +47,7 @@ class NetworkModule(context: Context, private val sessionManager: SessionManager
     }
 
     private val okHttpClient: OkHttpClient = OkHttpClient.Builder()
+        .addInterceptor(baseUrlInterceptor)
         .addInterceptor(loggingInterceptor)
         .addInterceptor(authInterceptor)
         .connectTimeout(30, TimeUnit.SECONDS)
