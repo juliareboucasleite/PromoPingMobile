@@ -1,4 +1,4 @@
-package com.example.promopingmobile.ui.screens
+﻿package com.example.promopingmobile.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -46,6 +46,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
@@ -85,7 +86,8 @@ fun LoginScreen(
         heroRes = R.drawable.entrar,
         title = "Entrar na tua conta",
         subtitle = "Continua a monitorizar os preços das tuas lojas favoritas.",
-        snackbarHostState = snackbarHostState
+        snackbarHostState = snackbarHostState,
+        contentOffsetY = (-16).dp
     ) {
         LabeledTextField(
             label = "Email",
@@ -105,7 +107,8 @@ fun LoginScreen(
         PrimaryButton(
             text = if (state.loading) "A entrar..." else "Entrar",
             onClick = { viewModel.login(email, password, rememberMe) },
-            enabled = !state.loading && email.isNotBlank() && password.length >= 6
+            enabled = email.isNotBlank() && password.length >= 6,
+            loading = state.loading
         )
         
         Spacer(Modifier.height(16.dp))
@@ -130,10 +133,7 @@ fun LoginScreen(
             )
         }
         
-        if (state.loading) {
-            Spacer(Modifier.height(12.dp))
-            CircularProgressIndicator()
-        }
+        Spacer(Modifier.height(12.dp))
     }
 }
 
@@ -161,7 +161,8 @@ fun RegisterScreen(
         heroRes = R.drawable.registar,
         title = "Cria a tua conta",
         subtitle = "Começa a seguir os preços e recebe alertas de promoções.",
-        snackbarHostState = snackbarHostState
+        snackbarHostState = snackbarHostState,
+        contentOffsetY = (-24).dp
     ) {
         LabeledTextField(label = "Nome", value = nome, onValueChange = setNome)
         LabeledTextField(
@@ -180,7 +181,8 @@ fun RegisterScreen(
         PrimaryButton(
             text = if (state.loading) "A criar..." else "Registar",
             onClick = { viewModel.register(nome, email, password, dataNascimento) },
-            enabled = !state.loading && email.isNotBlank() && password.length >= 6 && nome.isNotBlank() && dataNascimento.isNotBlank()
+            enabled = email.isNotBlank() && password.length >= 6 && nome.isNotBlank() && dataNascimento.isNotBlank(),
+            loading = state.loading
         )
         
         Spacer(Modifier.height(16.dp))
@@ -205,10 +207,7 @@ fun RegisterScreen(
             )
         }
         
-        if (state.loading) {
-            Spacer(Modifier.height(12.dp))
-            CircularProgressIndicator()
-        }
+        Spacer(Modifier.height(12.dp))
     }
 }
 
@@ -309,6 +308,7 @@ private fun AuthScreenContainer(
     title: String,
     subtitle: String,
     snackbarHostState: SnackbarHostState,
+    contentOffsetY: Dp = 0.dp,
     content: @Composable ColumnScope.() -> Unit
 ) {
     Box(
@@ -327,7 +327,7 @@ private fun AuthScreenContainer(
                     .fillMaxWidth()
                     .verticalScroll(rememberScrollState())
                     .padding(horizontal = 24.dp, vertical = 20.dp)
-                    .offset(y = (-24).dp),
+                    .offset(y = contentOffsetY),
                 horizontalAlignment = Alignment.Start
             ) {
                 Text(
@@ -385,4 +385,5 @@ private fun HeroImage(
             .fillMaxWidth()
     )
 }
+
 
