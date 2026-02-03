@@ -1,24 +1,32 @@
 package com.example.promopingmobile.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.ClickableText
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -28,23 +36,31 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.zIndex
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.decode.SvgDecoder
 import coil.request.ImageRequest
 import com.example.promopingmobile.R
+import com.example.promopingmobile.ui.components.CheckboxWithLabel
 import com.example.promopingmobile.ui.components.LabeledTextField
 import com.example.promopingmobile.ui.components.PasswordField
 import com.example.promopingmobile.ui.components.PrimaryButton
 import com.example.promopingmobile.ui.components.SecondaryTextButton
 import com.example.promopingmobile.ui.state.PromoViewModel
 import kotlinx.coroutines.delay
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowForward
 
 @Composable
 fun LoginScreen(
@@ -63,6 +79,7 @@ fun LoginScreen(
 
     val (email, setEmail) = remember { mutableStateOf("") }
     val (password, setPassword) = remember { mutableStateOf("") }
+    val (rememberMe, setRememberMe) = remember { mutableStateOf(false) }
 
     AuthScreenContainer(
         heroRes = R.drawable.entrar,
@@ -77,12 +94,42 @@ fun LoginScreen(
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
         )
         PasswordField(label = "Senha", value = password, onValueChange = setPassword)
+        
+        CheckboxWithLabel(
+            label = "Lembrar sessão",
+            checked = rememberMe,
+            onCheckedChange = setRememberMe,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
+        
         PrimaryButton(
             text = if (state.loading) "A entrar..." else "Entrar",
-            onClick = { viewModel.login(email, password) },
+            onClick = { viewModel.login(email, password, rememberMe) },
             enabled = !state.loading && email.isNotBlank() && password.length >= 6
         )
-        SecondaryTextButton(text = "Criar conta", onClick = onNavigateToRegister)
+        
+        Spacer(Modifier.height(16.dp))
+        
+        // "Não tem conta? Criar conta" message
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Não tem conta? ",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+            )
+            Text(
+                text = "Criar conta",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.clickable { onNavigateToRegister() }
+            )
+        }
+        
         if (state.loading) {
             Spacer(Modifier.height(12.dp))
             CircularProgressIndicator()
@@ -135,7 +182,29 @@ fun RegisterScreen(
             onClick = { viewModel.register(nome, email, password, dataNascimento) },
             enabled = !state.loading && email.isNotBlank() && password.length >= 6 && nome.isNotBlank() && dataNascimento.isNotBlank()
         )
-        SecondaryTextButton(text = "Já tenho conta", onClick = onNavigateToLogin)
+        
+        Spacer(Modifier.height(16.dp))
+        
+        // "Já tem conta? Entrar" message
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Já tem conta? ",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+            )
+            Text(
+                text = "Entrar",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.clickable { onNavigateToLogin() }
+            )
+        }
+        
         if (state.loading) {
             Spacer(Modifier.height(12.dp))
             CircularProgressIndicator()
@@ -150,36 +219,58 @@ fun WelcomeScreen(onContinue: () -> Unit) {
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
-        Column(modifier = Modifier.fillMaxSize()) {
-            HeroImage(imageRes = R.raw.bemvindo)
-            Surface(
-                modifier = Modifier.fillMaxSize(),
-                color = MaterialTheme.colorScheme.surface,
-                tonalElevation = 0.dp,
-                shadowElevation = 0.dp,
-                shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+        HeroImage(
+            imageRes = R.raw.bemvindo,
+            modifier = Modifier
+                .height(600.dp)
+                .offset(y = 32.dp)
+                .align(Alignment.TopCenter)
+                .zIndex(1f),
+            alignment = Alignment.BottomCenter
+        )
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(start = 24.dp, end = 24.dp, top = 500.dp, bottom = 20.dp)
+                .zIndex(2f)
+        ) {
+            Spacer(Modifier.height(150.dp))
+            Text(
+                text = "Bem-vindo!",
+                style = MaterialTheme.typography.headlineMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                fontWeight = FontWeight.Bold
+            )
+            Spacer(Modifier.height(0.7.dp))
+            Text(
+                text = "Comece a monitorizar seus produtos e nunca perca uma recaida de preco!",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+            )
+            Spacer(Modifier.height(80.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Column(
+                Text(
+                    text = "Continuar",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                )
+                Spacer(Modifier.width(8.dp))
+                Box(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                        .size(44.dp)
+                        .background(MaterialTheme.colorScheme.primary, CircleShape)
+                        .clickable(onClick = onContinue),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = "Bem-vindo ao PromoPing",
-                        style = MaterialTheme.typography.headlineSmall,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        fontWeight = FontWeight.Bold
+                    Icon(
+                        imageVector = Icons.Default.ArrowForward,
+                        contentDescription = "Continuar",
+                        tint = MaterialTheme.colorScheme.onPrimary
                     )
-                    Spacer(Modifier.height(8.dp))
-                    Text(
-                        text = "Em poucos minutos vais monitorizar os preços das tuas lojas favoritas.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
-                        textAlign = TextAlign.Center
-                    )
-                    Spacer(Modifier.height(24.dp))
-                    PrimaryButton(text = "Continuar", onClick = onContinue)
                 }
             }
         }
@@ -223,40 +314,44 @@ private fun AuthScreenContainer(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
+            .background(Color.White)
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
-            HeroImage(imageRes = heroRes)
-            Surface(
+            HeroImage(
+                imageRes = heroRes,
+                modifier = Modifier.height(415.dp),
+                alignment = Alignment.BottomCenter
+            )
+            Column(
                 modifier = Modifier
-                    .fillMaxSize(),
-                color = MaterialTheme.colorScheme.surface,
-                shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 24.dp, vertical = 20.dp),
+                horizontalAlignment = Alignment.Start
             ) {
-                Column(
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(Modifier.height(6.dp))
+                Box(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .verticalScroll(rememberScrollState())
-                        .padding(horizontal = 24.dp, vertical = 20.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = title,
-                        style = MaterialTheme.typography.headlineSmall,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Spacer(Modifier.height(6.dp))
-                    Text(
-                        text = subtitle,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
-                        textAlign = TextAlign.Center,
-                        lineHeight = 20.sp
-                    )
-                    Spacer(Modifier.height(20.dp))
-                    content()
-                }
+                        .height(2.dp)
+                        .width(48.dp)
+                        .background(MaterialTheme.colorScheme.primary)
+                )
+                Spacer(Modifier.height(10.dp))
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
+                    textAlign = TextAlign.Start,
+                    lineHeight = 20.sp
+                )
+                Spacer(Modifier.height(20.dp))
+                content()
             }
         }
         SnackbarHost(
@@ -271,7 +366,9 @@ private fun AuthScreenContainer(
 @Composable
 private fun HeroImage(
     imageRes: Any,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    contentScale: ContentScale = ContentScale.Crop,
+    alignment: Alignment = Alignment.Center
 ) {
     val context = LocalContext.current
     AsyncImage(
@@ -281,10 +378,10 @@ private fun HeroImage(
             .crossfade(true)
             .build(),
         contentDescription = null,
-        contentScale = ContentScale.Crop,
+        contentScale = contentScale,
+        alignment = alignment,
         modifier = modifier
             .fillMaxWidth()
-            .height(360.dp)
     )
 }
 
