@@ -87,6 +87,7 @@ fun RegisterScreen(
     val (nome, setNome) = remember { mutableStateOf("") }
     val (email, setEmail) = remember { mutableStateOf("") }
     val (password, setPassword) = remember { mutableStateOf("") }
+    val (dataNascimento, setDataNascimento) = remember { mutableStateOf("") }
 
     AuthScaffold(title = "Criar conta", snackbarHostState = snackbarHostState) {
         LabeledTextField(label = "Nome", value = nome, onValueChange = setNome)
@@ -96,11 +97,17 @@ fun RegisterScreen(
             onValueChange = setEmail,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
         )
+        LabeledTextField(
+            label = "Data de nascimento (AAAA-MM-DD)",
+            value = dataNascimento,
+            onValueChange = setDataNascimento,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+        )
         PasswordField(label = "Senha (min. 6)", value = password, onValueChange = setPassword)
         PrimaryButton(
             text = if (state.loading) "A criar..." else "Registar",
-            onClick = { viewModel.register(nome, email, password) },
-            enabled = !state.loading && email.isNotBlank() && password.length >= 6 && nome.isNotBlank()
+            onClick = { viewModel.register(nome, email, password, dataNascimento) },
+            enabled = !state.loading && email.isNotBlank() && password.length >= 6 && nome.isNotBlank() && dataNascimento.isNotBlank()
         )
         SecondaryTextButton(text = "Já tenho conta", onClick = onNavigateToLogin)
         if (state.loading) {
