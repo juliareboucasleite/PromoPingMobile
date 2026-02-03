@@ -13,12 +13,16 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Event
+import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -36,6 +40,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -43,12 +48,17 @@ import androidx.compose.ui.unit.dp
 import com.example.promopingmobile.data.model.Product
 import com.example.promopingmobile.ui.components.PrimaryButton
 import com.example.promopingmobile.ui.state.PromoViewModel
+import com.example.promopingmobile.ui.theme.OrangePrimary
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen(viewModel: PromoViewModel, onOpenProducts: () -> Unit) {
     val dashboard = viewModel.dashboardState.collectAsState().value
     val profile = viewModel.profileState.collectAsState().value
+    val uriHandler = LocalUriHandler.current
+    val deleteCandidate = remember { mutableStateOf<Product?>(null) }
+    val dateCandidate = remember { mutableStateOf<Product?>(null) }
+    val dateInput = remember { mutableStateOf("") }
 
     LaunchedEffect(Unit) {
         viewModel.loadStats()
@@ -70,7 +80,11 @@ fun DashboardScreen(viewModel: PromoViewModel, onOpenProducts: () -> Unit) {
             )
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = { showAddDialog.value = true }) {
+            FloatingActionButton(
+                onClick = { showAddDialog.value = true },
+                containerColor = OrangePrimary,
+                contentColor = Color.White
+            ) {
                 Icon(Icons.Default.Add, contentDescription = "Adicionar")
             }
         }
@@ -91,7 +105,15 @@ fun DashboardScreen(viewModel: PromoViewModel, onOpenProducts: () -> Unit) {
                 item { EmptyProducts(onOpenProducts = onOpenProducts) }
             } else {
                 items(dashboard.products) { product ->
-                    ProductCard(product = product, onOpen = { onOpenProducts() })
+                    ProductCard(
+                        product = product,
+                        onOpenLink = { uriHandler.openUri(product.link) },
+                        onDelete = { deleteCandidate.value = product },
+                        onEditDate = {
+                            dateInput.value = product.dataLimite.orEmpty()
+                            dateCandidate.value = product
+                        }
+                    )
                 }
             }
         }
@@ -104,6 +126,51 @@ fun DashboardScreen(viewModel: PromoViewModel, onOpenProducts: () -> Unit) {
                 viewModel.addProduct(nome, link, data, preco)
                 showAddDialog.value = false
             }
+        )
+    }
+
+    val productToDelete = deleteCandidate.value
+    if (productToDelete != null) {
+        AlertDialog(
+            onDismissRequest = { deleteCandidate.value = null },
+            title = { Text("Remover produto") },
+            text = { Text("Tem a certeza que deseja remover este produto?") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.deleteProduct(productToDelete.id)
+                        deleteCandidate.value = null
+                    }
+                ) { Text("Remover") }
+            },
+            dismissButton = { TextButton(onClick = { deleteCandidate.value = null }) { Text("Cancelar") } }
+        )
+    }
+
+    val productToUpdate = dateCandidate.value
+    if (productToUpdate != null) {
+        AlertDialog(
+            onDismissRequest = { dateCandidate.value = null },
+            title = { Text("Data limite") },
+            text = {
+                Column {
+                    OutlinedTextField(
+                        value = dateInput.value,
+                        onValueChange = { dateInput.value = it },
+                        label = { Text("Data limite (opcional)") }
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        val value = dateInput.value.trim().ifBlank { null }
+                        viewModel.updateProduct(productToUpdate.id, value)
+                        dateCandidate.value = null
+                    }
+                ) { Text("Guardar") }
+            },
+            dismissButton = { TextButton(onClick = { dateCandidate.value = null }) { Text("Cancelar") } }
         )
     }
 }
@@ -150,17 +217,44 @@ private fun EmptyProducts(onOpenProducts: () -> Unit) {
 }
 
 @Composable
-private fun ProductCard(product: Product, onOpen: () -> Unit) {
+private fun ProductCard(
+    product: Product,
+    onOpenLink: () -> Unit,
+    onEditDate: () -> Unit,
+    onDelete: () -> Unit
+) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = CardDefaults.shape
     ) {
         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Pill(text = product.loja ?: "Loja", color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f), textColor = MaterialTheme.colorScheme.primary)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        val (storeBg, storeText) = storePillColors(product.loja)
+                        Pill(text = product.loja ?: "Loja", color = storeBg, textColor = storeText)
+                    }
+                    Text(product.nome, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold))
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    IconButton(onClick = onOpenLink) {
+                        Icon(Icons.Default.OpenInNew, contentDescription = "Abrir link")
+                    }
+                    if (product.dataLimite != null) {
+                        IconButton(onClick = onEditDate) {
+                            Icon(Icons.Default.Event, contentDescription = "Alterar data limite")
+                        }
+                    }
+                    IconButton(onClick = onDelete) {
+                        Icon(Icons.Default.Delete, contentDescription = "Remover produto")
+                    }
+                }
             }
-            Text(product.nome, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold))
             Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
                 Column {
                     Text("Preço atual:", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f))
@@ -171,7 +265,6 @@ private fun ProductCard(product: Product, onOpen: () -> Unit) {
                     Text(product.dataAdicao ?: "--", style = MaterialTheme.typography.bodyMedium)
                 }
             }
-            TextButton(onClick = onOpen, modifier = Modifier.align(Alignment.End)) { Text("Ver detalhes") }
         }
     }
 }
@@ -222,6 +315,16 @@ private fun Pill(text: String, color: Color, textColor: Color = MaterialTheme.co
         style = MaterialTheme.typography.labelSmall,
         color = textColor
     )
+}
+
+@Composable
+private fun storePillColors(loja: String?): Pair<Color, Color> {
+    val normalized = loja?.trim()?.lowercase().orEmpty()
+    return if (normalized.contains("worten")) {
+        Color(0xFFFFE5E8) to Color(0xFFE30613)
+    } else {
+        MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) to MaterialTheme.colorScheme.primary
+    }
 }
 
 private fun formatPrice(value: Double?): String = value?.let { String.format("%.2f €", it) } ?: "--"
