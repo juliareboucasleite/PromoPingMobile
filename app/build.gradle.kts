@@ -48,6 +48,31 @@ android {
     }
 }
 
+// Reverse porta 3000 automaticamente antes do build/debug para usar o backend local via USB
+tasks.register("adbReverseDebug") {
+    group = "dev"
+    description = "Configura adb reverse tcp:3000"
+    doLast {
+        val adbPath = "C:/Users/julia/AppData/Local/Android/Sdk/platform-tools/adb.exe"
+        val adb = file(adbPath)
+        if (!adb.exists()) {
+            println("[adbReverseDebug] adb não encontrado em $adbPath; pulei.")
+            return@doLast
+        }
+        exec {
+            executable = adbPath
+            args("reverse", "tcp:3000", "tcp:3000")
+            isIgnoreExitValue = true // não falhar se nenhum device
+        }
+        println("[adbReverseDebug] reverse tcp:3000 -> tcp:3000 executado.")
+    }
+}
+
+// Garante que o reverse rode antes do build de debug
+tasks.matching { it.name == "preDebugBuild" }.configureEach {
+    dependsOn("adbReverseDebug")
+}
+
 dependencies {
     implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
