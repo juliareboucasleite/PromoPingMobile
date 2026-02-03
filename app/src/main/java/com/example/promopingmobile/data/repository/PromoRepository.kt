@@ -11,13 +11,20 @@ import com.example.promopingmobile.data.model.CreateProductRequest
 import com.example.promopingmobile.data.model.Plan
 import com.example.promopingmobile.data.model.Product
 import com.example.promopingmobile.data.model.QrConfirmRequest
+import com.example.promopingmobile.data.model.PreferenceUpdate
+import com.example.promopingmobile.data.model.PreferencesResponse
 import com.example.promopingmobile.data.model.RegisterRequest
 import com.example.promopingmobile.data.model.UpdatePasswordRequest
+import com.example.promopingmobile.data.model.UpdatePreferencesRequest
 import com.example.promopingmobile.data.model.UpdateProductRequest
 import com.example.promopingmobile.data.model.UpdateProfileRequest
 import com.example.promopingmobile.data.model.UserProfile
 import com.example.promopingmobile.data.model.UserStats
 import com.example.promopingmobile.data.remote.PromoPingApi
+import com.example.promopingmobile.data.model.ProfileResponse
+import com.example.promopingmobile.data.model.ProductsResponse
+import com.example.promopingmobile.data.model.toDomain
+import com.example.promopingmobile.data.model.toUserProfile
 import com.squareup.moshi.Moshi
 import kotlinx.coroutines.flow.Flow
 import okhttp3.ResponseBody
@@ -49,10 +56,16 @@ class PromoRepository(
         api.confirmQr(QrConfirmRequest(code = code))
     }
 
-    suspend fun fetchProfile(): ApiResult<UserProfile> = safeCall { api.getProfile() }
+    suspend fun fetchProfile(): ApiResult<UserProfile> = unwrapProfile { api.getProfile() }
 
-    suspend fun updateProfile(body: UpdateProfileRequest): ApiResult<UserProfile> = safeCall {
+    suspend fun updateProfile(body: UpdateProfileRequest): ApiResult<ApiMessageResponse> = safeCall {
         api.updateProfile(body)
+    }
+
+    suspend fun fetchPreferences(): ApiResult<PreferencesResponse> = safeCall { api.getPreferences() }
+
+    suspend fun updatePreferences(body: UpdatePreferencesRequest): ApiResult<ApiMessageResponse> = safeCall {
+        api.updatePreferences(body)
     }
 
     suspend fun updatePassword(body: UpdatePasswordRequest): ApiResult<Unit> = safeCall {
@@ -61,17 +74,17 @@ class PromoRepository(
 
     suspend fun fetchStats(): ApiResult<UserStats> = safeCall { api.getStats() }
 
-    suspend fun fetchProducts(): ApiResult<List<Product>> = safeCall { api.getProducts() }
+    suspend fun fetchProducts(): ApiResult<List<Product>> = unwrapProducts { api.getProducts() }
 
-    suspend fun createProduct(body: CreateProductRequest): ApiResult<Product> = safeCall {
+    suspend fun createProduct(body: CreateProductRequest): ApiResult<ApiMessageResponse> = safeCall {
         api.createProduct(body)
     }
 
-    suspend fun updateProduct(id: String, body: UpdateProductRequest): ApiResult<Product> = safeCall {
+    suspend fun updateProduct(id: String, body: UpdateProductRequest): ApiResult<ApiMessageResponse> = safeCall {
         api.updateProduct(id, body)
     }
 
-    suspend fun deleteProduct(id: String): ApiResult<Unit> = safeCall {
+    suspend fun deleteProduct(id: String): ApiResult<ApiMessageResponse> = safeCall {
         api.deleteProduct(id)
     }
 
@@ -123,6 +136,36 @@ class PromoRepository(
                 } else {
                     ApiResult.Error("Resposta vazia do servidor", response.code())
                 }
+            } else {
+                ApiResult.Error(parseError(response), response.code())
+            }
+        } catch (e: Exception) {
+            ApiResult.Error(e.message ?: "Falha de rede")
+        }
+    }
+
+    private suspend fun unwrapProfile(block: suspend () -> Response<ProfileResponse>): ApiResult<UserProfile> {
+        return try {
+            val response = block()
+            if (response.isSuccessful) {
+                val body = response.body()
+                val profile = body?.profile?.toUserProfile()
+                if (profile != null) ApiResult.Success(profile) else ApiResult.Error("Perfil não encontrado", response.code())
+            } else {
+                ApiResult.Error(parseError(response), response.code())
+            }
+        } catch (e: Exception) {
+            ApiResult.Error(e.message ?: "Falha de rede")
+        }
+    }
+
+    private suspend fun unwrapProducts(block: suspend () -> Response<ProductsResponse>): ApiResult<List<Product>> {
+        return try {
+            val response = block()
+            if (response.isSuccessful) {
+                val body = response.body()
+                val list = body?.produtos?.map { it.toDomain() } ?: emptyList()
+                ApiResult.Success(list)
             } else {
                 ApiResult.Error(parseError(response), response.code())
             }

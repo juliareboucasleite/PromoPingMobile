@@ -9,8 +9,10 @@ import com.example.promopingmobile.data.model.CreateProductRequest
 import com.example.promopingmobile.data.model.Plan
 import com.example.promopingmobile.data.model.Product
 import com.example.promopingmobile.data.model.UpdatePasswordRequest
+import com.example.promopingmobile.data.model.UpdatePreferencesRequest
 import com.example.promopingmobile.data.model.UpdateProductRequest
 import com.example.promopingmobile.data.model.UpdateProfileRequest
+import com.example.promopingmobile.data.model.PreferenceUpdate
 import com.example.promopingmobile.data.model.UserProfile
 import com.example.promopingmobile.data.model.UserStats
 import com.example.promopingmobile.data.model.matches
@@ -264,13 +266,30 @@ class PromoViewModel(private val repository: PromoRepository) : ViewModel() {
 
     fun saveProfile(nome: String, email: String, telefone: String?, emailNotif: Boolean?, discordNotif: Boolean?) {
         viewModelScope.launch {
-            when (val result = repository.updateProfile(
-                UpdateProfileRequest(nome.trim(), email.trim(), telefone, emailNotif, discordNotif)
-            )) {
-                is ApiResult.Success -> _profileState.update { it.copy(profile = result.data, message = "Perfil atualizado") }
-                is ApiResult.Error -> _profileState.update { it.copy(error = result.message) }
-                ApiResult.Loading -> {}
+            val profileResult = repository.updateProfile(
+                UpdateProfileRequest(nome.trim(), email.trim(), telefone)
+            )
+            if (profileResult is ApiResult.Error) {
+                _profileState.update { it.copy(error = profileResult.message) }
+                return@launch
             }
+
+            val prefs = mutableListOf<PreferenceUpdate>()
+            emailNotif?.let { prefs.add(PreferenceUpdate(tipo = "email", ativo = it)) }
+            discordNotif?.let { prefs.add(PreferenceUpdate(tipo = "discord", ativo = it)) }
+
+            if (prefs.isNotEmpty()) {
+                when (val prefResult = repository.updatePreferences(UpdatePreferencesRequest(preferences = prefs))) {
+                    is ApiResult.Error -> {
+                        _profileState.update { it.copy(error = prefResult.message) }
+                        return@launch
+                    }
+                    else -> { /* ok */ }
+                }
+            }
+
+            loadProfile()
+            _profileState.update { it.copy(message = "Perfil atualizado") }
         }
     }
 

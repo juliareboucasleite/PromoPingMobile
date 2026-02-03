@@ -7,11 +7,15 @@ import com.example.promopingmobile.data.model.ApiMessageResponse
 import com.example.promopingmobile.data.model.Product
 import com.example.promopingmobile.data.model.RegisterRequest
 import com.example.promopingmobile.data.model.UpdatePasswordRequest
+import com.example.promopingmobile.data.model.UpdatePreferencesRequest
 import com.example.promopingmobile.data.model.UpdateProductRequest
 import com.example.promopingmobile.data.model.UpdateProfileRequest
 import com.example.promopingmobile.data.model.UserProfile
 import com.example.promopingmobile.data.model.UserStats
 import com.example.promopingmobile.data.model.QrConfirmRequest
+import com.example.promopingmobile.data.model.ProfileResponse
+import com.example.promopingmobile.data.model.PreferencesResponse
+import com.example.promopingmobile.data.model.ProductsResponse
 import okhttp3.ResponseBody
 import retrofit2.Response
 import retrofit2.http.Body
@@ -33,10 +37,16 @@ interface PromoPingApi {
     suspend fun confirmQr(@Body body: QrConfirmRequest): Response<ApiMessageResponse>
 
     @GET("/api/user/profile")
-    suspend fun getProfile(): Response<UserProfile>
+    suspend fun getProfile(): Response<ProfileResponse>
 
     @PUT("/api/user/profile")
-    suspend fun updateProfile(@Body body: UpdateProfileRequest): Response<UserProfile>
+    suspend fun updateProfile(@Body body: UpdateProfileRequest): Response<ApiMessageResponse>
+
+    @GET("/api/user/preferences")
+    suspend fun getPreferences(): Response<PreferencesResponse>
+
+    @PUT("/api/user/preferences")
+    suspend fun updatePreferences(@Body body: UpdatePreferencesRequest): Response<ApiMessageResponse>
 
     @PUT("/api/user/password")
     suspend fun updatePassword(@Body body: UpdatePasswordRequest): Response<Unit>
@@ -51,19 +61,19 @@ interface PromoPingApi {
     suspend fun getStats(): Response<UserStats>
 
     @GET("/api/produtos")
-    suspend fun getProducts(): Response<List<Product>>
+    suspend fun getProducts(): Response<ProductsResponse>
 
     @POST("/api/produtos")
-    suspend fun createProduct(@Body body: CreateProductRequest): Response<Product>
+    suspend fun createProduct(@Body body: CreateProductRequest): Response<ApiMessageResponse>
 
     @PUT("/api/produtos/{id}")
     suspend fun updateProduct(
         @Path("id") id: String,
         @Body body: UpdateProductRequest
-    ): Response<Product>
+    ): Response<ApiMessageResponse>
 
     @DELETE("/api/produtos/{id}")
-    suspend fun deleteProduct(@Path("id") id: String): Response<Unit>
+    suspend fun deleteProduct(@Path("id") id: String): Response<ApiMessageResponse>
 
     @GET("/api/exportar/produtos/excel")
     suspend fun exportProdutosExcel(): Response<ResponseBody>

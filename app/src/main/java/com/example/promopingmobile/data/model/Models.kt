@@ -2,7 +2,6 @@ package com.example.promopingmobile.data.model
 
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
-import java.time.LocalDate
 
 @JsonClass(generateAdapter = true)
 data class AuthRequest(
@@ -44,6 +43,29 @@ data class QrConfirmRequest(
 )
 
 @JsonClass(generateAdapter = true)
+data class PreferenceItem(
+    @Json(name = "Tipo") val tipo: String,
+    @Json(name = "Ativo") val ativo: Int
+)
+
+@JsonClass(generateAdapter = true)
+data class PreferencesResponse(
+    val status: String? = null,
+    @Json(name = "preferences") val preferences: List<PreferenceItem>? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class UpdatePreferencesRequest(
+    val preferences: List<PreferenceUpdate>
+)
+
+@JsonClass(generateAdapter = true)
+data class PreferenceUpdate(
+    val tipo: String,
+    val ativo: Boolean
+)
+
+@JsonClass(generateAdapter = true)
 data class UserProfile(
     val id: String? = null,
     val nome: String = "",
@@ -54,6 +76,25 @@ data class UserProfile(
     val stats: UserStats? = null,
     val notificacoesEmail: Boolean? = null,
     val notificacoesDiscord: Boolean? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class ProfilePayload(
+    val nome: String = "",
+    val email: String = "",
+    val telefone: String? = null,
+    @Json(name = "FotoPerfil") val fotoPerfil: String? = null,
+    @Json(name = "preferencias") val preferencias: List<PreferenceItem>? = null,
+    @Json(name = "proxima_alteracao_senha") val proximaAlteracaoSenha: String? = null,
+    @Json(name = "proxima_alteracao_nome") val proximaAlteracaoNome: String? = null,
+    @Json(name = "pode_alterar_senha") val podeAlterarSenha: Boolean? = null,
+    @Json(name = "pode_alterar_nome") val podeAlterarNome: Boolean? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class ProfileResponse(
+    val status: String? = null,
+    val profile: ProfilePayload? = null
 )
 
 @JsonClass(generateAdapter = true)
@@ -108,9 +149,7 @@ data class Plan(
 data class UpdateProfileRequest(
     val nome: String,
     val email: String,
-    val telefone: String? = null,
-    val notificacoesEmail: Boolean? = null,
-    val notificacoesDiscord: Boolean? = null
+    val telefone: String? = null
 )
 
 @JsonClass(generateAdapter = true)
@@ -132,3 +171,42 @@ fun Product.matches(query: String, loja: String?, estado: String?): Boolean {
     val matchesEstado = estado.isNullOrBlank() || (this.estado?.equals(estado, ignoreCase = true) == true)
     return matchesQuery && matchesLoja && matchesEstado
 }
+
+@JsonClass(generateAdapter = true)
+data class ProductPayload(
+    @Json(name = "Id") val id: Int,
+    @Json(name = "Nome") val nome: String,
+    @Json(name = "Link") val link: String,
+    @Json(name = "PrecoAtual") val precoAtual: Double? = null,
+    @Json(name = "PrecoAlvo") val precoAlvo: Double? = null,
+    @Json(name = "DataLimite") val dataLimite: String? = null,
+    @Json(name = "Loja") val loja: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class ProductsResponse(
+    val status: String? = null,
+    @Json(name = "produtos") val produtos: List<ProductPayload>? = null
+)
+
+fun ProfilePayload.toUserProfile(): UserProfile {
+    val prefEmail = preferencias?.firstOrNull { it.tipo.equals("email", ignoreCase = true) }?.ativo?.let { it == 1 }
+    val prefDiscord = preferencias?.firstOrNull { it.tipo.equals("discord", ignoreCase = true) }?.ativo?.let { it == 1 }
+    return UserProfile(
+        nome = nome,
+        email = email,
+        telefone = telefone,
+        notificacoesEmail = prefEmail,
+        notificacoesDiscord = prefDiscord
+    )
+}
+
+fun ProductPayload.toDomain(): Product = Product(
+    id = id.toString(),
+    nome = nome,
+    link = link,
+    precoAtual = precoAtual,
+    precoAlvo = precoAlvo,
+    dataLimite = dataLimite,
+    loja = loja
+)
