@@ -120,6 +120,14 @@ class PromoViewModel(private val repository: PromoRepository) : ViewModel() {
         }
     }
 
+    fun loginWithToken(token: String) {
+        viewModelScope.launch {
+            repository.saveToken(token)
+            _authState.update { it.copy(token = token, isAuthenticated = true) }
+            loadInitialData(force = true)
+        }
+    }
+
     fun logout() {
         viewModelScope.launch {
             repository.clearToken()
