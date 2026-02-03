@@ -42,7 +42,7 @@ class PromoRepository(
 
     val tokenFlow: Flow<String?> = sessionManager.tokenFlow
 
-    suspend fun saveToken(token: String) = sessionManager.saveToken(token)
+    suspend fun saveToken(token: String, rememberMe: Boolean = false) = sessionManager.saveToken(token, rememberMe)
 
     suspend fun clearToken() = sessionManager.clear()
 
@@ -108,10 +108,40 @@ class PromoRepository(
     suspend fun deleteAccount(): ApiResult<ApiMessageResponse> = safeCall { api.deleteAccount() }
 
     fun staticPlans(): List<Plan> = listOf(
-        Plan("Free", 0.0, 0.0, 5, 24, exportaRelatorios = false, observacoes = "Plano atual") ,
-        Plan("Basic", 6.99, 69.0, 25, 12, exportaRelatorios = true, observacoes = "Inclui PDF e Excel"),
-        Plan("Standard", 9.99, 99.0, 75, 6, exportaRelatorios = true, observacoes = "Monitorização mais frequente"),
-        Plan("Premium", 14.99, 149.0, 200, 2, exportaRelatorios = true, observacoes = "Suporte prioritário")
+        Plan("Free", 0.0, 0.0, 5, 24, exportaRelatorios = false, observacoes = "Sem relatorios"),
+        Plan(
+            "Basic",
+            4.99,
+            59.88,
+            25,
+            4,
+            exportaRelatorios = true,
+            observacoes = "Relatorios basicos",
+            linkMensal = "https://buy.stripe.com/eVqcN587y8IG3IM1dleZ201",
+            linkAnual = "https://buy.stripe.com/dRmfZh0F60ca3IMg8feZ204"
+        ),
+        Plan(
+            "Standard",
+            12.99,
+            155.88,
+            50,
+            2,
+            exportaRelatorios = true,
+            observacoes = "Relatorios avancados",
+            linkMensal = "https://buy.stripe.com/dRm3cv73u8IG4MQ2hpeZ202",
+            linkAnual = "https://buy.stripe.com/14AaEXevWcYWdjm5tBeZ205"
+        ),
+        Plan(
+            "Premium",
+            15.30,
+            183.60,
+            100,
+            1,
+            exportaRelatorios = true,
+            observacoes = "Relatorios avancados",
+            linkMensal = "https://buy.stripe.com/aFa14ncnO6Ay0wA7BJeZ203",
+            linkAnual = "https://buy.stripe.com/dRmbJ1evW3om9362hpeZ206"
+        )
     )
 
     private fun parseError(response: Response<*>): String {
