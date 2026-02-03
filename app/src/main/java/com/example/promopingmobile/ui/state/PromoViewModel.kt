@@ -95,12 +95,12 @@ class PromoViewModel(private val repository: PromoRepository) : ViewModel() {
         _plansState.value = PlansUiState(plans = repository.staticPlans())
     }
 
-    fun login(email: String, password: String) {
+    fun login(email: String, password: String, rememberMe: Boolean = false) {
         _authState.update { it.copy(loading = true, error = null) }
         viewModelScope.launch {
             when (val result = repository.login(email, password)) {
                 is ApiResult.Success -> {
-                    result.data.token?.let { repository.saveToken(it) }
+                    result.data.token?.let { repository.saveToken(it, rememberMe) }
                     _authState.update { it.copy(loading = false, error = null, user = result.data.user) }
                 }
                 is ApiResult.Error -> _authState.update { it.copy(loading = false, error = result.message) }
