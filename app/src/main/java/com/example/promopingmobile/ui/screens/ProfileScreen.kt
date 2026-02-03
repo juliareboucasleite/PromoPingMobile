@@ -86,16 +86,31 @@ fun ProfileScreen(viewModel: PromoViewModel) {
         ) {
             Text("Perfil", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onBackground)
 
-            Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), shape = RoundedCornerShape(12.dp)) {
+            Card(
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
                 Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(value = nome.value, onValueChange = { nome.value = it }, label = { Text("Nome") })
+                    OutlinedTextField(
+                        value = nome.value,
+                        onValueChange = { nome.value = it },
+                        label = { Text("Nome") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
                     OutlinedTextField(
                         value = email.value,
                         onValueChange = { email.value = it },
                         label = { Text("Email") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                        modifier = Modifier.fillMaxWidth()
                     )
-                    OutlinedTextField(value = telefone.value, onValueChange = { telefone.value = it }, label = { Text("Telefone (opcional)") })
+                    OutlinedTextField(
+                        value = telefone.value,
+                        onValueChange = { telefone.value = it },
+                        label = { Text("Telefone (opcional)") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                         Text("Notificações por email", modifier = Modifier.weight(1f))
                         Switch(checked = notifEmail.value, onCheckedChange = { notifEmail.value = it })
@@ -114,7 +129,11 @@ fun ProfileScreen(viewModel: PromoViewModel) {
                 }
             }
 
-            Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), shape = RoundedCornerShape(12.dp)) {
+            Card(
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
                 Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text("Login via QR", style = MaterialTheme.typography.titleMedium)
                     Text("Aponte a câmera para o QR gerado no site para iniciar sessão imediatamente.", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f))
@@ -139,34 +158,11 @@ fun ProfileScreen(viewModel: PromoViewModel) {
                 }
             }
 
-            Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), shape = RoundedCornerShape(12.dp)) {
-                Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Alterar senha", style = MaterialTheme.typography.titleMedium)
-                    val atual = remember { mutableStateOf("") }
-                    val nova = remember { mutableStateOf("") }
-                    val confirmar = remember { mutableStateOf("") }
-                    OutlinedTextField(value = atual.value, onValueChange = { atual.value = it }, label = { Text("Senha atual") })
-                    OutlinedTextField(value = nova.value, onValueChange = { nova.value = it }, label = { Text("Nova senha") })
-                    OutlinedTextField(value = confirmar.value, onValueChange = { confirmar.value = it }, label = { Text("Confirmar senha") })
-                    Button(
-                        onClick = { viewModel.changePassword(atual.value, nova.value, confirmar.value) },
-                        enabled = nova.value.length >= 6 && nova.value == confirmar.value,
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(10.dp)
-                    ) { Text("Alterar senha") }
-                }
-            }
-
-            Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), shape = RoundedCornerShape(12.dp)) {
-                Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text("Relatórios", style = MaterialTheme.typography.titleMedium)
-                    TextButton(onClick = { viewModel.exportPdf() }, modifier = Modifier.fillMaxWidth()) { Text("Relatório PDF (produtos)") }
-                    TextButton(onClick = { viewModel.exportExcel() }, modifier = Modifier.fillMaxWidth()) { Text("Relatório Excel (produtos)") }
-                    TextButton(onClick = { viewModel.exportRelatorioCompleto() }, modifier = Modifier.fillMaxWidth()) { Text("Relatório completo") }
-                }
-            }
-
-            Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), shape = RoundedCornerShape(12.dp)) {
+            Card(
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
                 Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text("Conta", style = MaterialTheme.typography.titleMedium)
                     TextButton(onClick = { viewModel.deactivateAccount() }, modifier = Modifier.fillMaxWidth()) { Text("Desativar conta") }
