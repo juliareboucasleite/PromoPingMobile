@@ -41,8 +41,8 @@ class PromoRepository(
     suspend fun login(email: String, password: String): ApiResult<AuthResponse> =
         safeCall { api.login(AuthRequest(email = email.trim(), password = password)) }
 
-    suspend fun register(nome: String, email: String, password: String): ApiResult<AuthResponse> =
-        safeCall { api.register(RegisterRequest(nome.trim(), email.trim(), password)) }
+    suspend fun register(nome: String, email: String, password: String, dataNascimento: String): ApiResult<AuthResponse> =
+        safeCall { api.register(RegisterRequest(nome.trim(), email.trim(), password, dataNascimento.trim())) }
 
     suspend fun fetchProfile(): ApiResult<UserProfile> = safeCall { api.getProfile() }
 
