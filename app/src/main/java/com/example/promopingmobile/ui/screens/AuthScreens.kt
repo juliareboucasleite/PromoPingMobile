@@ -326,7 +326,8 @@ private fun AuthScreenContainer(
                 modifier = Modifier
                     .fillMaxWidth()
                     .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 24.dp, vertical = 20.dp),
+                    .padding(horizontal = 24.dp, vertical = 20.dp)
+                    .offset(y = (-24).dp),
                 horizontalAlignment = Alignment.Start
             ) {
                 Text(
