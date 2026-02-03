@@ -1,5 +1,6 @@
 package com.example.promopingmobile.ui.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -12,7 +13,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -20,13 +20,13 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -35,8 +35,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.example.promopingmobile.data.model.Product
@@ -57,14 +58,15 @@ fun DashboardScreen(viewModel: PromoViewModel, onOpenProducts: () -> Unit) {
     var showAddDialog = remember { mutableStateOf(false) }
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
-                title = { Text("Dashboard • PromoPing") },
-                actions = {
-                    TextButton(onClick = onOpenProducts) { Text("Produtos") }
-                    TextButton(onClick = { viewModel.logout() }) { Text("Sair") }
-                },
-                scrollBehavior = androidx.compose.material3.TopAppBarDefaults.enterAlwaysScrollBehavior(rememberTopAppBarState())
+                title = { Text("Dashboard") },
+                scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(rememberTopAppBarState()),
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background,
+                    scrolledContainerColor = MaterialTheme.colorScheme.background
+                )
             )
         },
         floatingActionButton = {
@@ -77,21 +79,19 @@ fun DashboardScreen(viewModel: PromoViewModel, onOpenProducts: () -> Unit) {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(16.dp)
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             item {
                 GreetingHeader(profile.profile?.nome)
-                StatsRow(dashboard.stats)
-                Spacer(modifier = Modifier.height(12.dp))
-                Text("Produtos monitorizados", style = MaterialTheme.typography.titleMedium)
                 Spacer(modifier = Modifier.height(8.dp))
+                Text("\nProdutos monitorizados", style = MaterialTheme.typography.titleMedium)
             }
             if (dashboard.products.isEmpty()) {
                 item { EmptyProducts(onOpenProducts = onOpenProducts) }
             } else {
                 items(dashboard.products) { product ->
-                    ProductCard(product = product, onRemove = { viewModel.deleteProduct(product.id) })
-                    Spacer(modifier = Modifier.height(8.dp))
+                    ProductCard(product = product, onOpen = { onOpenProducts() })
                 }
             }
         }
@@ -112,10 +112,10 @@ fun DashboardScreen(viewModel: PromoViewModel, onOpenProducts: () -> Unit) {
 private fun GreetingHeader(nome: String?) {
     Column(modifier = Modifier.fillMaxWidth()) {
         Text(
-            text = "Olá, ${nome ?: "utilizador"}",
+            text = "Olá, ${nome ?: "utilizador"}!",
             style = MaterialTheme.typography.titleLarge
         )
-        Text("Aqui tens um resumo rápido dos teus produtos.")
+        Text("Monitorize e gerencie os seus produtos favoritos")
     }
 }
 
@@ -150,30 +150,28 @@ private fun EmptyProducts(onOpenProducts: () -> Unit) {
 }
 
 @Composable
-private fun ProductCard(product: Product, onRemove: () -> Unit) {
-    val uriHandler = LocalUriHandler.current
+private fun ProductCard(product: Product, onOpen: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors()
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        shape = CardDefaults.shape
     ) {
-        Column(modifier = Modifier.padding(12.dp)) {
-            Text(product.nome, style = MaterialTheme.typography.titleMedium)
-            Text(product.loja ?: "Loja desconhecida", style = MaterialTheme.typography.bodySmall)
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Atual: ${product.precoAtual ?: 0.0}€")
-                TextButton(onClick = { uriHandler.openUri(product.link) }) {
-                    Icon(Icons.Default.OpenInNew, contentDescription = "Abrir")
-                    Text("Abrir")
+        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Pill(text = product.loja ?: "Loja", color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f), textColor = MaterialTheme.colorScheme.primary)
+            }
+            Text(product.nome, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold))
+            Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+                Column {
+                    Text("Preço atual:", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f))
+                    Text(formatPrice(product.precoAtual), style = MaterialTheme.typography.bodyMedium)
+                }
+                Column(horizontalAlignment = Alignment.End) {
+                    Text("Adicionado", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f))
+                    Text(product.dataAdicao ?: "--", style = MaterialTheme.typography.bodyMedium)
                 }
             }
-            Text("Alvo: ${product.precoAlvo ?: 0.0}€ • Estado: ${product.estado ?: "A monitorizar"}")
-            Row(horizontalArrangement = Arrangement.End, modifier = Modifier.fillMaxWidth()) {
-                TextButton(onClick = onRemove) { Text("Remover") }
-            }
+            TextButton(onClick = onOpen, modifier = Modifier.align(Alignment.End)) { Text("Ver detalhes") }
         }
     }
 }
@@ -213,3 +211,17 @@ private fun AddProductDialog(onDismiss: () -> Unit, onAdd: (String, String, Stri
         dismissButton = { TextButton(onDismiss) { Text("Cancelar") } }
     )
 }
+
+@Composable
+private fun Pill(text: String, color: Color, textColor: Color = MaterialTheme.colorScheme.onPrimary) {
+    Text(
+        text = text,
+        modifier = Modifier
+            .background(color = color, shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp))
+            .padding(horizontal = 8.dp, vertical = 4.dp),
+        style = MaterialTheme.typography.labelSmall,
+        color = textColor
+    )
+}
+
+private fun formatPrice(value: Double?): String = value?.let { String.format("%.2f €", it) } ?: "--"

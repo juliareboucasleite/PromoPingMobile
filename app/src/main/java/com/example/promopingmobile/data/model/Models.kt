@@ -178,8 +178,10 @@ data class ProductPayload(
     @Json(name = "Nome") val nome: String,
     @Json(name = "Link") val link: String,
     @Json(name = "PrecoAtual") val precoAtual: Double? = null,
+    @Json(name = "PrecoAnterior") val precoAnterior: Double? = null,
     @Json(name = "PrecoAlvo") val precoAlvo: Double? = null,
     @Json(name = "DataLimite") val dataLimite: String? = null,
+    @Json(name = "DataCriacao") val dataCriacao: String? = null,
     @Json(name = "Loja") val loja: String? = null
 )
 
@@ -206,7 +208,9 @@ fun ProductPayload.toDomain(): Product = Product(
     nome = nome,
     link = link,
     precoAtual = precoAtual,
+    precoAnterior = precoAnterior,
     precoAlvo = precoAlvo,
     dataLimite = dataLimite,
-    loja = loja
+    loja = loja,
+    dataAdicao = dataCriacao
 )
