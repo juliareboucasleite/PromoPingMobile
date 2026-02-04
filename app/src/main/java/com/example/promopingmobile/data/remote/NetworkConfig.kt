@@ -4,17 +4,20 @@ import android.content.Context
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.net.wifi.WifiManager
+import android.util.Log
 import com.example.promopingmobile.BuildConfig
 
 class NetworkConfig(private val context: Context) {
     private val ssidToBaseUrl: Map<String, String> = mapOf(
-        // TODO: add your SSID -> base URL mapping
-        // "MinhaRedeWifi" to "http://192.168.1.72:3000"
+        // "reboucas" to "http://192.168.1.72:3000",
+        "Apocalypse" to "http://localhost:3000",
     )
 
     fun currentBaseUrl(): String {
-        val ssid = currentSsid() ?: return BuildConfig.API_BASE_URL
-        return ssidToBaseUrl[ssid] ?: BuildConfig.API_BASE_URL
+        val ssid = currentSsid()
+        val baseUrl = ssid?.let { ssidToBaseUrl[it] } ?: BuildConfig.API_BASE_URL
+        Log.d("NetworkConfig", "ssid=$ssid baseUrl=$baseUrl")
+        return baseUrl
     }
 
     private fun currentSsid(): String? {
