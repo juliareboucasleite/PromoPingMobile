@@ -32,3 +32,4 @@ Thumbs.db
 
 # Misc
 captures/
+app/src/main/java/com/example/promopingmobile/data/remote/NetworkConfig.kt
