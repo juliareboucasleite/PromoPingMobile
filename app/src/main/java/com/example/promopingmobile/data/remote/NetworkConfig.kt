@@ -9,8 +9,8 @@ import com.example.promopingmobile.BuildConfig
 
 class NetworkConfig(private val context: Context) {
     private val ssidToBaseUrl: Map<String, String> = mapOf(
-        // "reboucas" to "http://192.168.1.72:3000",
-        "Apocalypse" to "http://localhost:3000",
+        "reboucas" to "http://192.168.1.72:3000",
+       // "Apocalypse" to "http://192.168.0.110:3000",
     )
 
     fun currentBaseUrl(): String {
