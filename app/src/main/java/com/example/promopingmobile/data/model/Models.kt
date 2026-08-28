@@ -84,6 +84,7 @@ data class ProfilePayload(
     val email: String = "",
     val telefone: String? = null,
     @Json(name = "FotoPerfil") val fotoPerfil: String? = null,
+    @Json(name = "perfilId") val perfilId: Int? = null,
     @Json(name = "preferencias") val preferencias: List<PreferenceItem>? = null,
     @Json(name = "proxima_alteracao_senha") val proximaAlteracaoSenha: String? = null,
     @Json(name = "proxima_alteracao_nome") val proximaAlteracaoNome: String? = null,
@@ -176,6 +177,12 @@ fun Product.matches(query: String, loja: String?, estado: String?): Boolean {
 }
 
 @JsonClass(generateAdapter = true)
+data class PriceHistoryItem(
+    @Json(name = "Preco") val preco: Double? = null,
+    @Json(name = "Data") val data: String? = null
+)
+
+@JsonClass(generateAdapter = true)
 data class ProductPayload(
     @Json(name = "Id") val id: Int,
     @Json(name = "Nome") val nome: String,
@@ -185,7 +192,8 @@ data class ProductPayload(
     @Json(name = "PrecoAlvo") val precoAlvo: Double? = null,
     @Json(name = "DataLimite") val dataLimite: String? = null,
     @Json(name = "DataCriacao") val dataCriacao: String? = null,
-    @Json(name = "Loja") val loja: String? = null
+    @Json(name = "Loja") val loja: String? = null,
+    @Json(name = "Historico") val historico: List<PriceHistoryItem>? = null
 )
 
 @JsonClass(generateAdapter = true)
@@ -206,14 +214,20 @@ fun ProfilePayload.toUserProfile(): UserProfile {
     )
 }
 
-fun ProductPayload.toDomain(): Product = Product(
-    id = id.toString(),
-    nome = nome,
-    link = link,
-    precoAtual = precoAtual,
-    precoAnterior = precoAnterior,
-    precoAlvo = precoAlvo,
-    dataLimite = dataLimite,
-    loja = loja,
-    dataAdicao = dataCriacao
-)
+fun ProductPayload.toDomain(): Product {
+    val previousFromHistory = historico
+        ?.mapNotNull { it.preco }
+        ?.drop(1)
+        ?.firstOrNull()
+    return Product(
+        id = id.toString(),
+        nome = nome,
+        link = link,
+        precoAtual = precoAtual,
+        precoAnterior = precoAnterior ?: previousFromHistory,
+        precoAlvo = precoAlvo,
+        dataLimite = dataLimite,
+        loja = loja,
+        dataAdicao = dataCriacao
+    )
+}

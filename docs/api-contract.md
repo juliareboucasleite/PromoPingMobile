@@ -1,9 +1,12 @@
 # Contrato API e mapeamento BD – PromoPing (app móvel)
 
+A API e a base de dados de produção são **PostgreSQL** (`papv5`, porta 5432).
+Os identificadores na BD estão em minúsculas (`referenciaid`, `precoatual`); o backend devolve JSON com os nomes abaixo.
+
 ## 1. Base URL e porta
 - Dev: http://<IP_DA_MAQUINA>:3000 ou http://localhost:3000 (emulador Android: http://10.0.2.2:3000)
 - Prod: mesmo domínio do site (ex.: https://api.promoping.pt ou BASE_URL/API_URL do .env)
-- Porta padrão: 3000 (PORT)
+- Porta da API: 3000 (PORT). Porta da BD: 5432.
 
 ## 2. Autenticação (JWT)
 - Header em todas as rotas: Authorization: Bearer <access_token_jwt>
@@ -20,15 +23,17 @@ Resposta 200:
     "email": "string",
     "telefone": "string|null",
     "FotoPerfil": "string|null",
+    "perfilId": 1,
     "contas_conectadas": [{"Tipo": "email|telefone|discord", "Conectado": 0|1}],
     "preferencias": [{"Tipo": "string", "Ativo": 0|1}],
     "proxima_alteracao_senha": "ISO|null",
-    "proxima_alteracao_nome": "ISO|null",
+    "proxima_alteracao_nome": null,
     "pode_alterar_senha": true|false,
-    "pode_alterar_nome": true|false
+    "pode_alterar_nome": true
   }
 }
 Mapping app: preferencias Tipo "email" -> notificacoesEmail; "discord" -> notificacoesDiscord (Ativo 1/0 -> true/false).
+Colunas BD: `utilizadores.nome`, `email`, `telefone`, `fotoperfil`, `perfilid`, `ultimaalteracaosenha`.
 
 ### 3.2 PUT /api/user/profile (auth)
 Body (opcionais): {
@@ -38,7 +43,7 @@ Body (opcionais): {
   "fotoPerfil": "string",
   "photo_url": "string"
 }
-Nota: nome tem cooldown 30 dias; erro 400 com proxima_alteracao.
+Nota: nome já não tem cooldown; senha tem cooldown 30 dias (`ultimaalteracaosenha`).
 Resp 200: {"status":"ok","message":"Perfil atualizado com sucesso"}
 Obs: preferências não mudam aqui; usar /api/user/preferences.
 
@@ -46,6 +51,7 @@ Obs: preferências não mudam aqui; usar /api/user/preferences.
 GET /api/user/preferences (auth)
 Resp: {"status":"ok","preferences":[{"Tipo":"email","Ativo":1},{"Tipo":"discord","Ativo":0}]}
 Mapping: Tipo email/discord -> notificacoesEmail/Discord; Ativo 1/0 -> true/false.
+Tabela: `preferenciasnotificacao` (`tipo` varchar, `ativo` integer 0/1).
 
 PUT /api/user/preferences (auth)
 Body:
@@ -100,26 +106,35 @@ Resp 200: {"status":"ok","message":"Produto removido com sucesso"}
 404 se não encontrado.
 
 ### 4.5 GET /api/produtos/:id/historico
-Resp 200: {"status":"ok","historico":[{"preco":...,"data":...}]}
+Resp 200: {"status":"ok","historico":[{"preco":...,"data":"..."}]}
 
-## 5. Mapeamento MySQL/MariaDB
+## 5. Mapeamento PostgreSQL (produção `papv5`)
+Schema alinhado com o servidor. Colunas na BD são minúsculas; o backend faz lookup case-insensitive.
+
 ### 5.1 utilizadores
-PK: ReferenciaID (varchar13). Colunas: ReferenciaID, Nome, Email, Telefone, FotoPerfil, DataRegisto, UltimaAlteracaoSenha, UltimaAlteracaoNome, PerfilId, etc.
+PK: `referenciaid` varchar(13).
+Colunas: referenciaid, nome, email, senhahash, telefone, codigotelefone, ativo (int 0/1), datadesativacao, dataregisto, ultimologin, perfilid, emailverificado, codigoemail, datanascimento, fotoperfil, createdat, updatedat, discord_id, google_id, ultimo_login, ultimaalteracaosenha, ultimaalteracaonome, dinheiro_poupado.
 
 ### 5.2 preferenciasnotificacao
-Colunas: Id (PK), ReferenciaID (FK utilizadores), Tipo (varchar50: email|discord), Ativo (tinyint 0/1). UNIQUE (ReferenciaID, Tipo). Mapping app: notificacoesEmail -> Tipo email, notificacoesDiscord -> Tipo discord.
+Colunas: id (PK), referenciaid (FK utilizadores), tipo (varchar50: email|discord), ativo (integer 0/1). UNIQUE (referenciaid, tipo).
+Mapping app: notificacoesEmail -> tipo email, notificacoesDiscord -> tipo discord.
 
 ### 5.3 produtos
-Colunas: Id (PK), ReferenciaID (FK utilizadores), Nome, Link, PrecoAtual, PrecoAlvo, DataLimite, Shipping, LojaId (FK lojas), CreatedAt, UpdatedAt, DeletedAt.
-Entrada: nome->Nome, link->Link, precoAlvo->PrecoAlvo, data->DataLimite. LojaId setado pelo backend (detecção por link). Saída inclui Loja via join.
+Colunas: id (PK), referenciaid (FK utilizadores), nome, link, precoatual, precoalvo, datalimite, shipping, lojaid (FK lojas), createdat, updatedat, deletedat, loja.
+Entrada: nome->nome, link->link, precoAlvo->precoalvo, data->datalimite. lojaid setado pelo backend (detecção por link). Saída inclui Loja via join com `lojas.nome`.
 
 ### 5.4 historicoprecos
-Colunas: Id (PK), ProdutoId (FK produtos), Preco, DataRegisto.
+Colunas: id (PK), produtoid (FK produtos), preco, dataregisto, precoanterior, loja, status (default 'Ativo'), observacoes, updatedat.
+GET /produtos usa Preco + DataRegisto no array Historico.
 
 ### 5.5 outras
-- lojas: Id, Nome, Dominio (produtos usam LojaId)
-- contasconectadas: ReferenciaID, Tipo, Identificador, Conectado
-- configutilizador: ReferenciaID, LimiteProdutos etc.
+- lojas: id, nome, dominio, cssselectorpreco, createdat
+- contasconectadas: id, referenciaid, tipo, identificador, conectado, dataconexao
+- configutilizador: referenciaid, planoatualid, planoativoid, limiteprodutos, historicodias, statusassinatura, ...
+- planos: id, nome, preco, limiteprodutos, historicodias, intervaloverificacao, permitesms, relatorios, linksplanos, linksplanosanual, precoanual
+- notificacoes: referenciaid, produtoid, tipo, mensagem, enviada, valorpoupado, dataenvio
+- qr_tokens: code, session_id, referenciaid, email, status, expires_at, used_at, created_at, token, refresh_token
+- user_sessions: session_id, referenciaid, refresh_token_hash, user_agent, ip_address, browser, platform, device_label, created_at, last_seen_at, revoked_at
 
 ## 6. Credenciais e testes
 - Criar user via site ou POST /api/auth/register, depois login para obter token.
@@ -135,4 +150,6 @@ Colunas: Id (PK), ProdutoId (FK produtos), Preco, DataRegisto.
 - backend/routes/user.js (GET/PUT /profile, GET /me)
 - backend/routes/preferences.js (GET/PUT /api/user/preferences)
 - backend/routes/produtos.js (CRUD + historico)
-- backend/database/tableManager.js (CREATE TABLE utilizadores, produtos, preferenciasnotificacao, historicoprecos...)
+- sql/PAPv5.postgres.sql (schema PostgreSQL de produção)
+- backend/database/db.js (pool pg + compat mysql2)
+- scripts/migrate-db-postgres.js (colunas/tabelas extra)
